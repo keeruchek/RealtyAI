@@ -113,6 +113,7 @@ st.title("Where to live next?")
 mode = st.radio("Mode:", ("Compare Two Places", "Single Place"))
 place1 = st.text_input("Place 1 (City, State)", "Cambridge, MA")
 place2 = st.text_input("Place 2 (City, State)", "Somerville, MA") if mode == "Compare Two Places" else None
+# ... Your entire original code unchanged above ...
 
 if st.button("Show Insights"):
     lat1, lon1 = geocode_location(place1)
@@ -157,7 +158,7 @@ if st.button("Show Insights"):
             else:
                 st.markdown(f"**{k}:** {v}")
 
-    # ======= Embed AI Search Bar BELOW the metrics =======
+    # ======= Add AI search bar below results =======
     st.markdown("---")
     st.header("🤖 Ask me anything about these neighborhoods")
 
@@ -165,7 +166,7 @@ if st.button("Show Insights"):
     if st.button("Get Answer", key="ai_answer_button"):
         if user_input.strip():
             API_URL = "https://api-inference.huggingface.co/models/google/flan-t5-base"
-            HF_TOKEN = os.getenv("HF_TOKEN")  # Make sure this is set in your environment
+            HF_TOKEN = os.getenv("HF_TOKEN")  # Your Hugging Face token
             headers = {
                 "Authorization": f"Bearer {HF_TOKEN}"
             }
