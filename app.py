@@ -1,6 +1,7 @@
 import pandas as pd
 import os
 import streamlit as st
+st.set_page_config(page_title="AI Q&A", page_icon="🤖")
 import requests
 import random
 
@@ -173,7 +174,7 @@ def query(payload):
         return {"error": str(e)}
 
 # Streamlit UI
-st.set_page_config(page_title="AI Q&A", page_icon="🤖")
+
 st.title("🤖 AI Search Bar (FLAN-T5)")
 st.write("Ask any question below:")
 
