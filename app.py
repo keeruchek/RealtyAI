@@ -2,6 +2,9 @@ import pandas as pd
 import streamlit as st
 import requests
 import random
+import openai
+
+# ============ Your existing functions ============
 
 # 🗺️ Geocoding using OpenCage Geocoder
 def geocode_location(place_name):
@@ -16,7 +19,7 @@ def geocode_location(place_name):
         pass
     return None, None
 
-# Updated Nearby places via Overpass API (only this function changed)
+# Updated Nearby places via Overpass API
 def get_nearby_places(lat, lon, query, label, radius=2000):
     url = "https://overpass-api.de/api/interpreter"
     query = f"""
@@ -41,7 +44,6 @@ def get_nearby_places(lat, lon, query, label, radius=2000):
         return [f"Error fetching {label}: {e}"]
 
 def avg_housing_cost(place):
-    # Simulate average rent and sale price for 2-bedroom
     avg_rent_2bed = random.randint(1500, 3500)
     avg_price_2bed = random.randint(250000, 750000)
     return {
@@ -67,7 +69,6 @@ def pet_score(green_count, walk_score):
     return round((green_count * 10 + walk_score) / 2)
 
 def parking_score(lat, lon):
-    # Count nearby parking amenities
     parks = get_nearby_places(lat, lon, 'amenity=parking', 'parking')
     return len(parks)
 
@@ -75,10 +76,7 @@ def get_all_metrics(place, lat, lon):
     housing = avg_housing_cost(place)
     crime = crime_rate(place)
     schools = get_nearby_places(lat, lon, 'amenity=school', 'schools') + get_nearby_places(lat, lon, 'amenity=college', 'colleges')
-
-    # Append random rating 1-10 to each school name to simulate ratings
     schools_with_ratings = [f"{school} (Rating: {random.randint(1,10)}/10)" for school in schools]
-
     commute_sc, commute_type = commute_score(place)
     parks = get_nearby_places(lat, lon, 'leisure=park', 'parks')
     walk_sc = walkability_score(lat, lon)
@@ -106,7 +104,8 @@ def get_all_metrics(place, lat, lon):
         "PET Score": pet_sc
     }
 
-# 🧭 Streamlit UI Setup
+# ============ Streamlit UI Setup ============
+
 st.set_page_config(page_title="Neighborhood Insights", layout="centered")
 st.title("Where to live next?")
 
@@ -127,7 +126,6 @@ if st.button("Show Insights"):
         st.error(f"Couldn't locate {place2}")
         st.stop()
 
-    # Show map
     locs = [{'lat': lat1,'lon':lon1,'place':place1}]
     if mode == "Compare Two Places":
         locs.append({'lat':lat2,'lon':lon2,'place':place2})
@@ -157,3 +155,33 @@ if st.button("Show Insights"):
                     st.markdown(f"- {item}")
             else:
                 st.markdown(f"**{k}:** {v}")
+
+# ============ AI Search Bar Integration ============
+
+st.markdown("---")  # separator
+
+st.title("AI Search Assistant")
+
+# You can set your OpenAI API key here or via environment variables
+openai.api_key = st.secrets.get("OPENAI_API_KEY") or "your-openai-api-key"
+
+question = st.text_input("Ask me anything")
+
+if st.button("Get Answer"):
+    if question:
+        try:
+            response = openai.ChatCompletion.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {"role": "system", "content": "You are a helpful assistant."},
+                    {"role": "user", "content": question}
+                ],
+                temperature=0.7,
+                max_tokens=200
+            )
+            answer = response['choices'][0]['message']['content']
+            st.markdown(f"**Answer:** {answer}")
+        except Exception as e:
+            st.error(f"Error: {e}")
+    else:
+        st.warning("Please enter a question.")
