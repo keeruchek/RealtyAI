@@ -1,5 +1,6 @@
 import pandas as pd
-import openai
+import os
+from openai import OpenAI
 import streamlit as st
 import requests
 import random
