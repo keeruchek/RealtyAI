@@ -160,11 +160,11 @@ if st.button("Show Insights"):
 # ============ AI Search Bar Integration ============
 
 st.markdown("---")  # separator
-
+client = openai.OpenAI(api_key=st.secrets["openai"]["api_key"])
 st.title("AI Search Assistant")
 
 # You can set your OpenAI API key here or via environment variables
-openai.api_key = st.secrets["openai"]["api_key"]
+
 question = st.text_input("Ask me anything")
 
 if st.button("Get Answer"):
