@@ -1,6 +1,27 @@
-# ai_search.py
 import streamlit as st
-from openai import OpenAI
+import requests
+import os
+
+# Get Hugging Face API key securely
+HF_TOKEN = os.getenv("HF_TOKEN") or st.secrets.get("HF_TOKEN")
+API_URL = "https://api-inference.huggingface.co/models/google/flan-t5-base"
+
+headers = {
+    "Authorization": f"Bearer {HF_TOKEN}"
+}
+
+def query_flant5(question):
+    response = requests.post(API_URL, headers=headers, json={"inputs": question})
+    try:
+        result = response.json()
+        if isinstance(result, list) and "generated_text" in result[0]:
+            return result[0]["generated_text"]
+        elif "error" in result:
+            return f"Error: {result['error']}"
+        else:
+            return "Unexpected response format."
+    except Exception as e:
+        return f"Error parsing response: {e}"
 
 def ai_search_component():
     st.header("AI Search Assistant")
@@ -11,21 +32,6 @@ def ai_search_component():
             st.warning("Please enter a question.")
             return
 
-        try:
-            client = OpenAI(api_key=st.secrets["openai"]["api_key"])
-
-            response = client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=[
-                    {"role": "system", "content": "You are a helpful assistant."},
-                    {"role": "user", "content": question}
-                ],
-                temperature=0.7,
-                max_tokens=200
-            )
-
-            answer = response.choices[0].message.content
+        with st.spinner("Thinking..."):
+            answer = query_flant5(question)
             st.markdown(f"**Answer:** {answer}")
-
-        except Exception as e:
-            st.error(f"Error: {e}")
