@@ -5,7 +5,6 @@ from ai_search import ai_search_component
 import requests
 import random
 
-
 # ============ Your existing functions ============
 
 # 🗺️ Geocoding using OpenCage Geocoder
@@ -158,37 +157,30 @@ if st.button("Show Insights"):
             else:
                 st.markdown(f"**{k}:** {v}")
 
-# ============ AI Search Bar Integration ============
-API_URL = "https://api-inference.huggingface.co/models/google/flan-t5-base"
-HF_TOKEN = os.getenv("HF_TOKEN")  # Set this in GitHub repo secrets or .env
+    # ======= Embed AI Search Bar BELOW the metrics =======
+    st.markdown("---")
+    st.header("🤖 Ask me anything about these neighborhoods")
 
-headers = {
-    "Authorization": f"Bearer {HF_TOKEN}"
-}
-
-def query(payload):
-    response = requests.post(API_URL, headers=headers, json=payload)
-    try:
-        return response.json()
-    except Exception as e:
-        return {"error": str(e)}
-
-# Streamlit UI
-
-st.title("🤖 AI Search Bar (FLAN-T5)")
-st.write("Ask any question below:")
-
-user_input = st.text_input("Your Question")
-
-if st.button("Get Answer"):
-    if user_input.strip():
-        with st.spinner("Thinking..."):
-            result = query({"inputs": user_input})
-            if isinstance(result, list) and "generated_text" in result[0]:
-                st.markdown(f"**Answer:** {result[0]['generated_text']}")
-            elif "error" in result:
-                st.error(f"Error: {result['error']}")
-            else:
-                st.warning("Unexpected response format.")
-    else:
-        st.warning("Please enter a question.")
+    user_input = st.text_input("Your Question", key="ai_question_input")
+    if st.button("Get Answer", key="ai_answer_button"):
+        if user_input.strip():
+            API_URL = "https://api-inference.huggingface.co/models/google/flan-t5-base"
+            HF_TOKEN = os.getenv("HF_TOKEN")  # Make sure this is set in your environment
+            headers = {
+                "Authorization": f"Bearer {HF_TOKEN}"
+            }
+            payload = {"inputs": user_input}
+            with st.spinner("Thinking..."):
+                response = requests.post(API_URL, headers=headers, json=payload)
+                try:
+                    result = response.json()
+                    if isinstance(result, list) and "generated_text" in result[0]:
+                        st.markdown(f"**Answer:** {result[0]['generated_text']}")
+                    elif "error" in result:
+                        st.error(f"Error: {result['error']}")
+                    else:
+                        st.warning("Unexpected response format.")
+                except Exception as e:
+                    st.error(f"Error parsing response: {e}")
+        else:
+            st.warning("Please enter a question.")
