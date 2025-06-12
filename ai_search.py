@@ -3,7 +3,7 @@ import requests
 import os
 
 # Get Hugging Face API key securely
-HF_TOKEN = os.getenv("HF_TOKEN") or st.secrets.get("HF_TOKEN")
+HF_TOKEN = st.secrets.get("HF_TOKEN")
 API_URL = "https://api-inference.huggingface.co/models/google/flan-t5-base"
 
 headers = {
