@@ -160,7 +160,7 @@ if st.button("Show Insights"):
 # ============ AI Search Bar Integration ============
 
 st.markdown("---")  # separator
-client = openai.OpenAI(api_key=st.secrets["openai"]["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"])
+client = openai.OpenAI(api_key=st.secrets["openai"]["api_key"]
 st.title("AI Search Assistant")
 
 # You can set your OpenAI API key here or via environment variables
