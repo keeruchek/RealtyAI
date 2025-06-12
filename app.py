@@ -1,7 +1,7 @@
 import pandas as pd
 import os
 import streamlit as st
-st.set_page_config(page_title="AI Q&A", page_icon="🤖")
+from ai_search import ai_search_component
 import requests
 import random
 
