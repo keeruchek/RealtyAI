@@ -20,16 +20,23 @@ def ai_search_component():
                     "inputs": f"Question: {question} Answer:"
                 }
                 response = requests.post(API_URL, headers=headers, json=payload)
-                response.raise_for_status()  # Raises an error for bad responses
+                response.raise_for_status()
 
-                # Robust JSON handling
+                # Print the raw response for debugging
+                st.write("RAW RESPONSE FROM API:")
+                st.code(response.text)
+
+                # Now try to parse JSON if not empty
+                if response.text.strip() == "":
+                    st.error("Empty response from API.")
+                    return
+
                 if response.headers.get("Content-Type", "").startswith("application/json"):
                     result = response.json()
                 else:
                     st.error(f"Received non-JSON response:\n{response.text}")
                     return
 
-                # Handle the result
                 if isinstance(result, list) and "generated_text" in result[0]:
                     st.markdown(f"**Answer:** {result[0]['generated_text']}")
                 elif "error" in result:
@@ -40,4 +47,4 @@ def ai_search_component():
             except requests.exceptions.HTTPError as http_err:
                 st.error(f"HTTP error: {http_err}\nRaw response: {response.text}")
             except Exception as e:
-                st.error(f"Error: {e}")
+                st.error(f"Error: {e}\nRaw response: {response.text}")
