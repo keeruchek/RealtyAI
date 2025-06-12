@@ -1,6 +1,5 @@
 import pandas as pd
 import os
-from openai import OpenAI
 import streamlit as st
 import requests
 import random
@@ -159,30 +158,36 @@ if st.button("Show Insights"):
                 st.markdown(f"**{k}:** {v}")
 
 # ============ AI Search Bar Integration ============
+API_URL = "https://api-inference.huggingface.co/models/google/flan-t5-base"
+HF_TOKEN = os.getenv("HF_TOKEN")  # Set this in GitHub repo secrets or .env
 
-st.markdown("---")  # separator
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-st.title("AI Search Assistant")
+headers = {
+    "Authorization": f"Bearer {HF_TOKEN}"
+}
 
-# You can set your OpenAI API key here or via environment variables
+def query(payload):
+    response = requests.post(API_URL, headers=headers, json=payload)
+    try:
+        return response.json()
+    except Exception as e:
+        return {"error": str(e)}
 
-question = st.text_input("Ask me anything")
+# Streamlit UI
+st.set_page_config(page_title="AI Q&A", page_icon="🤖")
+st.title("🤖 AI Search Bar (FLAN-T5)")
+st.write("Ask any question below:")
+
+user_input = st.text_input("Your Question")
 
 if st.button("Get Answer"):
-    if question:
-        try:
-            response = client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=[
-                    {"role": "system", "content": "You are a helpful assistant."},
-                    {"role": "user", "content": question}
-                ],
-                temperature=0.7,
-                max_tokens=200
-            )
-            answer = response['choices'][0].message.content
-            st.markdown(f"**Answer:** {answer}")
-        except Exception as e:
-            st.error(f"Error: {e}")
+    if user_input.strip():
+        with st.spinner("Thinking..."):
+            result = query({"inputs": user_input})
+            if isinstance(result, list) and "generated_text" in result[0]:
+                st.markdown(f"**Answer:** {result[0]['generated_text']}")
+            elif "error" in result:
+                st.error(f"Error: {result['error']}")
+            else:
+                st.warning("Unexpected response format.")
     else:
         st.warning("Please enter a question.")
