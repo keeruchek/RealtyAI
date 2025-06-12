@@ -1,8 +1,9 @@
 import pandas as pd
+import openai
 import streamlit as st
 import requests
 import random
-import openai
+
 
 # ============ Your existing functions ============
 
@@ -163,8 +164,7 @@ st.markdown("---")  # separator
 st.title("AI Search Assistant")
 
 # You can set your OpenAI API key here or via environment variables
-openai.api_key = st.secrets.get("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") or "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"
-
+openai.api_key = st.secrets["openai"]["api_key"]
 question = st.text_input("Ask me anything")
 
 if st.button("Get Answer"):
