@@ -86,7 +86,7 @@ def get_all_metrics(place, lat, lon):
     hospitals = get_nearby_places(lat, lon, 'amenity=hospital', 'hospitals')
     parking_ct = parking_score(lat, lon)
     div_ix = diversity_index(place)
-    pet_sc = pet_score(walk_sc, len(parks))
+    pet_sc = pet_score(len(parks), walk_sc)
 
     return {
         "Average Rent (2 bed)": housing['avg_rent_2bed'],
@@ -113,7 +113,18 @@ st.title("Where to live next?")
 mode = st.radio("Mode:", ("Compare Two Places", "Single Place"))
 place1 = st.text_input("Place 1 (City, State)", "Cambridge, MA")
 place2 = st.text_input("Place 2 (City, State)", "Somerville, MA") if mode == "Compare Two Places" else None
-# ... Your entire original code unchanged above ...
+
+# --- Session state for insights/results ---
+if "insights_data" not in st.session_state:
+    st.session_state["insights_data"] = None
+if "map_data" not in st.session_state:
+    st.session_state["map_data"] = None
+if "places" not in st.session_state:
+    st.session_state["places"] = None
+if "ai_answer" not in st.session_state:
+    st.session_state["ai_answer"] = None
+if "ai_error" not in st.session_state:
+    st.session_state["ai_error"] = None
 
 if st.button("Show Insights"):
     lat1, lon1 = geocode_location(place1)
@@ -131,10 +142,25 @@ if st.button("Show Insights"):
     locs = [{'lat': lat1,'lon':lon1,'place':place1}]
     if mode == "Compare Two Places":
         locs.append({'lat':lat2,'lon':lon2,'place':place2})
-    st.map(pd.DataFrame(locs))
 
     data1 = get_all_metrics(place1, lat1, lon1)
     data2 = get_all_metrics(place2, lat2, lon2) if mode=="Compare Two Places" else None
+
+    # STORE all results in session_state
+    st.session_state["places"] = (place1, place2)
+    st.session_state["map_data"] = locs
+    st.session_state["insights_data"] = (data1, data2, mode)
+    # Clear AI answer if new insights shown
+    st.session_state["ai_answer"] = None
+    st.session_state["ai_error"] = None
+
+# ---- Always display results if available ----
+
+if st.session_state["insights_data"]:
+    data1, data2, mode = st.session_state["insights_data"]
+    place1, place2 = st.session_state["places"]
+    locs = st.session_state["map_data"]
+    st.map(pd.DataFrame(locs))
 
     if mode=="Compare Two Places":
         col1, col2 = st.columns(2)
@@ -164,6 +190,8 @@ if st.button("Show Insights"):
 
     user_input = st.text_input("Your Question", key="ai_question_input")
     if st.button("Get Answer", key="ai_answer_button"):
+        st.session_state["ai_answer"] = None
+        st.session_state["ai_error"] = None
         if user_input.strip():
             API_URL = "https://api-inference.huggingface.co/models/google/flan-t5-base"
             HF_TOKEN = os.getenv("HF_TOKEN")  # Your Hugging Face token
@@ -172,16 +200,22 @@ if st.button("Show Insights"):
             }
             payload = {"inputs": user_input}
             with st.spinner("Thinking..."):
-                response = requests.post(API_URL, headers=headers, json=payload)
                 try:
+                    response = requests.post(API_URL, headers=headers, json=payload)
                     result = response.json()
                     if isinstance(result, list) and "generated_text" in result[0]:
-                        st.markdown(f"**Answer:** {result[0]['generated_text']}")
+                        st.session_state["ai_answer"] = result[0]['generated_text']
                     elif "error" in result:
-                        st.error(f"Error: {result['error']}")
+                        st.session_state["ai_error"] = f"Error: {result['error']}"
                     else:
-                        st.warning("Unexpected response format.")
+                        st.session_state["ai_error"] = "Unexpected response format."
                 except Exception as e:
-                    st.error(f"Error parsing response: {e}")
+                    st.session_state["ai_error"] = f"Error parsing response: {e}"
         else:
-            st.warning("Please enter a question.")
+            st.session_state["ai_error"] = "Please enter a question."
+
+    # Show AI answer or error if exists
+    if st.session_state["ai_answer"]:
+        st.markdown(f"**Answer:** {st.session_state['ai_answer']}")
+    if st.session_state["ai_error"]:
+        st.error(st.session_state["ai_error"])
