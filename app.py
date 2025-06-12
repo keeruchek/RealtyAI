@@ -194,7 +194,7 @@ if st.session_state["insights_data"]:
         st.session_state["ai_error"] = None
         if user_input.strip():
             API_URL = "https://api-inference.huggingface.co/models/google/flan-t5-base"
-            HF_TOKEN = os.getenv("HF_TOKEN")  # Your Hugging Face token
+            HF_TOKEN = st.secrets["hf_api_key"]
             headers = {
                 "Authorization": f"Bearer {HF_TOKEN}"
             }
